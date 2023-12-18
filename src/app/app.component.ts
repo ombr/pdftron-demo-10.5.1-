@@ -71,7 +71,37 @@ export class AppComponent implements AfterViewInit {
     });
   }
 
+
   async writeToImageField() {
+    await this.instance.Core.PDFNet.initialize();
+    this.document = await this.docViewer.getDocument().getPDFDoc();
+    this.elementWriter = await this.instance.Core.PDFNet.ElementWriter.create();
+
+    const annotations = await this.annotManager.getAnnotationsList();
+    const annotation = annotations.find((a: any) => a.getField().name === 'sp_photo_6')
+    this.makeAnnotationTransparent(annotation);
+
+    const rect = annotation.getRect();
+    const pageNum = annotation.getPageNumber();
+
+    const builder = await this.instance.Core.PDFNet.ElementBuilder.create();
+    const img = await this.createPDFNetImageFromMedia();
+    const page = await this.document.getPage(pageNum);
+    const pageHeight = this.docViewer.getPageHeight(pageNum);
+
+    console.log(img, rect.x1, pageHeight - rect.y2,
+        rect.x2 - rect.x1,
+        rect.y2 - rect.y1);
+    const element = await builder.createImageScaled(
+      img, rect.x1, pageHeight - rect.y2,
+        rect.x2 - rect.x1,
+        rect.y2 - rect.y1);
+    await this.elementWriter.beginOnPage(page);
+    await this.elementWriter.writePlacedElement(element);
+    await this.elementWriter.end();
+  }
+
+  async writeToImageField2() {
     await this.instance.Core.PDFNet.initialize();
     this.document = await this.docViewer.getDocument().getPDFDoc();
     this.elementWriter = await this.instance.Core.PDFNet.ElementWriter.create();
